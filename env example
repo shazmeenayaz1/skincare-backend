@@ -1,0 +1,15 @@
+PORT=5000
+MONGO_URI=mongodb://shazmeenayaz:shazmeen@ac-hk7uddg-shard-00-00.atohxje.mongodb.net:27017,ac-hk7uddg-shard-00-01.atohxje.mongodb.net:27017,ac-hk7uddg-shard-00-02.atohxje.mongodb.net:27017/skincare?ssl=true&replicaSet=atlas-75muwj-shard-0&authSource=admin&retryWrites=true&w=majority
+CLOUDINARY_CLOUD_NAME=ddplaf2ko
+CLOUDINARY_API_KEY=645115764539754
+CLOUDINARY_API_SECRET=KPuU2q93PuHpj2yStjSTN-53iuo
+
+JWT_SECRET=your_jwt_secret_key_here
+JWT_EXPIRE=30d
+
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_EMAIL=shazmeenayaz1@gmail.com
+SMTP_PASSWORD=boyf zmnu lyxt tqqy
+FROM_EMAIL=shazmeenayaz1@gmail.com
+FROM_NAME=SkinCare
