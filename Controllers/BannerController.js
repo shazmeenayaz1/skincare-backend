@@ -1,4 +1,10 @@
 import Banner from '../Models/BannerSchema.js';
+import { normalizeImageUrl, fileUploadUrl } from '../utils/normalizeImageUrl.js';
+
+const mapBanner = (banner) => {
+  const doc = banner.toObject ? banner.toObject() : banner;
+  return { ...doc, image: normalizeImageUrl(doc.image) };
+};
 
 // Create a new banner
 export const createBanner = async (req, res) => {
@@ -6,7 +12,7 @@ export const createBanner = async (req, res) => {
     console.log('Request Body:', req.body);
     console.log('Request File:', req.file);
     const { title, description } = req.body;
-    const image = req.file ? req.file.path : '';
+    const image = req.file ? fileUploadUrl(req.file) : '';
 
     if (!image) {
       return res.status(400).json({ message: 'Banner image is required' });
@@ -19,7 +25,7 @@ export const createBanner = async (req, res) => {
     });
 
     await banner.save();
-    res.status(201).json({ message: 'Banner created successfully', banner });
+    res.status(201).json({ message: 'Banner created successfully', banner: mapBanner(banner) });
   } catch (error) {
     res.status(500).json({ message: 'Error creating banner', error: error.message });
   }
@@ -29,7 +35,7 @@ export const createBanner = async (req, res) => {
 export const getBanners = async (req, res) => {
   try {
     const banners = await Banner.find();
-    res.status(200).json(banners);
+    res.status(200).json(banners.map(mapBanner));
   } catch (error) {
     res.status(500).json({ message: 'Error fetching banners', error: error.message });
   }
@@ -42,7 +48,7 @@ export const getBannerById = async (req, res) => {
     if (!banner) {
       return res.status(404).json({ message: 'Banner not found' });
     }
-    res.status(200).json(banner);
+    res.status(200).json(mapBanner(banner));
   } catch (error) {
     res.status(500).json({ message: 'Error fetching banner', error: error.message });
   }
@@ -55,7 +61,9 @@ export const updateBanner = async (req, res) => {
     let image = req.body.image;
 
     if (req.file) {
-      image = req.file.path;
+      image = fileUploadUrl(req.file);
+    } else if (image) {
+      image = normalizeImageUrl(image);
     }
 
     const banner = await Banner.findByIdAndUpdate(
@@ -68,7 +76,7 @@ export const updateBanner = async (req, res) => {
       return res.status(404).json({ message: 'Banner not found' });
     }
 
-    res.status(200).json({ message: 'Banner updated successfully', banner });
+    res.status(200).json({ message: 'Banner updated successfully', banner: mapBanner(banner) });
   } catch (error) {
     res.status(500).json({ message: 'Error updating banner', error: error.message });
   }
