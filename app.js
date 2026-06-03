@@ -5,6 +5,7 @@ import bannerRouter from './Routes/BannerRoutes.js';
 import productRouter from './Routes/ProductRoutes.js';
 import authRouter from './Routes/AuthRoutes.js';
 import userRouter from './Routes/UserRoutes.js';
+import orderRouter from './Routes/OrderRoutes.js';
 
 
 
@@ -21,6 +22,7 @@ app.use('/banners', bannerRouter);
 app.use('/products', productRouter);
 app.use('/auth', authRouter);
 app.use('/users', userRouter);
+app.use('/orders', orderRouter);
 
 
 
