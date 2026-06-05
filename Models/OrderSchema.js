@@ -76,6 +76,11 @@ const orderSchema = new mongoose.Schema({
         type: String,
         enum: ['Pending', 'Out for Delivery', 'Delivered', 'Cancelled'],
         default: 'Pending'
+    },
+    couponCode: String,
+    discount: {
+        type: Number,
+        default: 0
     }
 }, { timestamps: true });
 

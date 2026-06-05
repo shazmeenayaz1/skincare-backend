@@ -20,6 +20,7 @@ const storage = new CloudinaryStorage({
     if (req.baseUrl.includes('banners')) folderName = 'skincare/banners';
     else if (req.baseUrl.includes('products')) folderName = 'skincare/products';
     else if (req.baseUrl.includes('categories')) folderName = 'skincare/categories';
+    else if (req.baseUrl.includes('users') || req.baseUrl.includes('auth')) folderName = 'skincare/users';
 
     return {
       folder: folderName,

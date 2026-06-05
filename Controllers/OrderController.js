@@ -4,7 +4,7 @@ import Product from '../Models/ProductSchema.js';
 // Create a new order
 export const createOrder = async (req, res) => {
     try {
-        const { customer, items, paymentMethod, cardDetails, subtotal, shipping, total } = req.body;
+        const { customer, items, paymentMethod, cardDetails, subtotal, shipping, total, couponCode, discount } = req.body;
 
         // Basic verification
         if (!customer || !customer.name || !customer.phone || !customer.email || !customer.address || !customer.city) {
@@ -41,6 +41,8 @@ export const createOrder = async (req, res) => {
             subtotal,
             shipping,
             total,
+            couponCode,
+            discount,
             status: 'Pending'
         });
 
