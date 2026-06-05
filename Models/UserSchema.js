@@ -15,19 +15,35 @@ const userSchema = new mongoose.Schema({
         lowercase: true,
         match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email address']
     },
+    phone: {
+        type: String,
+        required: [true, 'Please enter your phone number']
+    },
     password: {
         type: String,
         required: [true, 'Please enter your password'],
         minlength: [6, 'Password must be at least 6 characters'],
         select: false // Don't return password by default
     },
-    role: {
+    image: {
+        type: String,
+        default: ''
+    },
+    urole: {
         type: String,
         enum: ['user', 'admin'],
         default: 'user'
     },
-    resetPasswordToken: String,
-    resetPasswordExpire: Date,
+    verifystatus: {
+        type: Boolean,
+        default: false
+    },
+    verifycode: {
+        type: String
+    },
+    forgotpasscode: {
+        type: String
+    },
     createdAt: {
         type: Date,
         default: Date.now
