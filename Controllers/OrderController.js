@@ -1,10 +1,11 @@
 import Order from '../Models/OrderSchema.js';
 import Product from '../Models/ProductSchema.js';
+import { verifyPaymentIntent } from './StripeController.js';
 
 // Create a new order
 export const createOrder = async (req, res) => {
     try {
-        const { customer, items, paymentMethod, cardDetails, subtotal, shipping, total, couponCode, discount } = req.body;
+        const { customer, items, paymentMethod, stripePaymentIntentId, subtotal, shipping, total, couponCode, discount } = req.body;
 
         // Basic verification
         if (!customer || !customer.name || !customer.phone || !customer.email || !customer.address || !customer.city) {
@@ -19,16 +20,37 @@ export const createOrder = async (req, res) => {
         const randomNum = Math.floor(1000 + Math.random() * 9000);
         const orderId = `ORD-${dateStr}-${randomNum}`;
 
-        // Mask Card number if it was credit card payment
-        let maskedCardDetails = undefined;
-        if (paymentMethod === 'card' && cardDetails) {
-            const num = cardDetails.number || '';
-            const last4 = num.replace(/\s/g, '').slice(-4);
-            maskedCardDetails = {
-                name: cardDetails.name,
-                number: last4 ? `**** **** **** ${last4}` : '',
-                expiry: cardDetails.expiry
-            };
+        let maskedCardDetails;
+        let paymentStatus = paymentMethod === 'cod' ? 'pending' : 'pending';
+        let verifiedPaymentIntentId;
+
+        if (paymentMethod === 'card') {
+            if (!stripePaymentIntentId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Stripe payment is required for card payments.'
+                });
+            }
+
+            const existingPaidOrder = await Order.findOne({ stripePaymentIntentId });
+            if (existingPaidOrder) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'This payment has already been used for an order.'
+                });
+            }
+
+            try {
+                const { cardDetails } = await verifyPaymentIntent(stripePaymentIntentId, total);
+                maskedCardDetails = cardDetails;
+                paymentStatus = 'paid';
+                verifiedPaymentIntentId = stripePaymentIntentId;
+            } catch (paymentError) {
+                return res.status(400).json({
+                    success: false,
+                    message: paymentError.message || 'Payment verification failed.'
+                });
+            }
         }
 
         // Create new order instance
@@ -38,6 +60,8 @@ export const createOrder = async (req, res) => {
             items,
             paymentMethod,
             cardDetails: maskedCardDetails,
+            stripePaymentIntentId: verifiedPaymentIntentId,
+            paymentStatus,
             subtotal,
             shipping,
             total,
@@ -68,10 +92,12 @@ export const createOrder = async (req, res) => {
     }
 };
 
-// Get all orders (Admin function)
+// Get all orders (Admin function, or filtered by customer email)
 export const getOrders = async (req, res) => {
     try {
-        const orders = await Order.find().sort({ createdAt: -1 });
+        const { email } = req.query;
+        const query = email ? { 'customer.email': email } : {};
+        const orders = await Order.find(query).sort({ createdAt: -1 });
         res.status(200).json(orders);
     } catch (error) {
         console.error('Error fetching orders:', error);
