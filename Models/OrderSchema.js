@@ -60,6 +60,14 @@ const orderSchema = new mongoose.Schema({
         number: String,
         expiry: String
     },
+    stripePaymentIntentId: {
+        type: String
+    },
+    paymentStatus: {
+        type: String,
+        enum: ['pending', 'paid', 'failed'],
+        default: 'pending'
+    },
     subtotal: {
         type: Number,
         required: true
