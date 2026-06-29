@@ -1,5 +1,12 @@
 import User from '../Models/UserSchema.js';
 import nodemailer from 'nodemailer';
+import crypto from 'crypto';
+import { OAuth2Client } from 'google-auth-library';
+
+const getGoogleClientId = () =>
+    process.env.GOOGLE_CLIENT_ID || process.env['GOOGKE-CLIENT-ID'];
+
+const getGoogleClient = () => new OAuth2Client(getGoogleClientId());
 
 // Helper function to send email via nodemailer
 const sendVerificationEmail = async (options) => {
@@ -294,6 +301,77 @@ export const resetPassword = async (req, res) => {
     }
 };
 
+// @desc    Login or register with Google
+// @route   POST /auth/google
+// @access  Public
+export const googleLogin = async (req, res) => {
+    try {
+        const { credential } = req.body;
+        const clientId = getGoogleClientId();
+
+        if (!clientId) {
+            return res.status(500).json({ success: false, message: 'Google login is not configured.' });
+        }
+
+        if (!credential) {
+            return res.status(400).json({ success: false, message: 'Google credential is required.' });
+        }
+
+        const ticket = await getGoogleClient().verifyIdToken({
+            idToken: credential,
+            audience: clientId,
+        });
+
+        const payload = ticket.getPayload();
+        const googleId = payload.sub;
+        const email = payload.email?.toLowerCase();
+        const name = payload.name || email?.split('@')[0] || 'User';
+        const picture = payload.picture || '';
+
+        if (!email) {
+            return res.status(400).json({ success: false, message: 'Google account email not found.' });
+        }
+
+        if (payload.email_verified === false) {
+            return res.status(401).json({ success: false, message: 'Google email is not verified.' });
+        }
+
+        let user = await User.findOne({ $or: [{ googleId }, { email }] });
+
+        if (user) {
+            if (!user.googleId) {
+                user.googleId = googleId;
+            }
+            user.verifystatus = true;
+            user.authProvider = 'google';
+            if (picture && !user.image) {
+                user.image = picture;
+            }
+            if (!user.name && name) {
+                user.name = name;
+            }
+            await user.save({ validateBeforeSave: false });
+        } else {
+            user = await User.create({
+                name,
+                email,
+                phone: '',
+                password: crypto.randomBytes(32).toString('hex'),
+                image: picture,
+                googleId,
+                authProvider: 'google',
+                urole: 'user',
+                verifystatus: true,
+            });
+        }
+
+        sendTokenResponse(user, 200, res);
+    } catch (err) {
+        console.error('Google login error:', err);
+        res.status(401).json({ success: false, message: 'Google login failed. Please try again.' });
+    }
+};
+
 // Get token from model, create cookie and send response
 const sendTokenResponse = (user, statusCode, res) => {
     // Create token
@@ -306,7 +384,9 @@ const sendTokenResponse = (user, statusCode, res) => {
             id: user._id,
             name: user.name,
             email: user.email,
-            urole: user.urole
+            phone: user.phone,
+            urole: user.urole,
+            image: user.image
         }
     });
 };
