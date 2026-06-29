@@ -17,13 +17,22 @@ const userSchema = new mongoose.Schema({
     },
     phone: {
         type: String,
-        required: [true, 'Please enter your phone number']
+        default: ''
     },
     password: {
         type: String,
-        required: [true, 'Please enter your password'],
         minlength: [6, 'Password must be at least 6 characters'],
-        select: false // Don't return password by default
+        select: false
+    },
+    googleId: {
+        type: String,
+        sparse: true,
+        unique: true
+    },
+    authProvider: {
+        type: String,
+        enum: ['local', 'google'],
+        default: 'local'
     },
     image: {
         type: String,
@@ -52,7 +61,7 @@ const userSchema = new mongoose.Schema({
 
 // Encrypt password before saving
 userSchema.pre('save', async function () {
-    if (!this.isModified('password')) {
+    if (!this.isModified('password') || !this.password) {
         return;
     }
     const salt = await bcrypt.genSalt(10);
